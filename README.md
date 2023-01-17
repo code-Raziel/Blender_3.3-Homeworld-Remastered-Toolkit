@@ -12,3 +12,5 @@ The authors claim no copyright to this version.
 Joint Tools contributed by Dominic Cassidy (drache9335@gmail.com).
 
 Forked by Dom2 to merge with the importer and add the background tools.
+
+New Fork for Blender_3.3 that works with HODOR --- COMING SOON 
