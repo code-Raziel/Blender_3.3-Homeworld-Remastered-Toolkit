@@ -58,16 +58,16 @@ import bpy_extras
 from pathlib import Path
 from subprocess import Popen, PIPE
 
-def get_hwrm_mod_dir():
+def get_hwrm_dir():
     key= r'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 244160'
     output = Popen(f'CMD /C Reg Query "{key}" /v InstallLocation',universal_newlines=True,stdout=PIPE,shell=True, text=True )
     output = output.stdout.read()
     if "InstallLocation" in output:
-        mod_dir = Path( output[(88+34):-2] ).resolve() / 'HomeworldRM' / 'Data' 
-        if not os.path.exists(mod_dir / 'ship') :
+        hwrm_dir = Path( output[(88+34):-2] ).resolve() / 'HomeworldRM'
+        if not os.path.exists(hwrm_dir / 'Data' / 'ship') :
             #os.mkdir(mod_dir, mode = 0o777 )
-            os.mkdir(mod_dir / 'ship', mode = 0o777 )
-        return mod_dir
+            os.mkdir(hwrm_dir / 'ship', mode = 0o777 )
+        return hwrm_dir
     else:
         output = 'Not Found'
         return output
@@ -145,11 +145,11 @@ class ExportDAE(bpy.types.Operator, ExportHelper):
                                             "xna_validate",
                                             ))
         from . import newDaeExport
-        return newDaeExport.save(self.filepath)
+        return newDaeExport.save(self.filepath,str(get_hwrm_dir()))
 
     def invoke(self, context, event):
         collection_name = bpy.data.collections[0].name # Filename based on collection name
-        ship_dir = get_hwrm_mod_dir().resolve() / 'ship' / collection_name 
+        ship_dir = get_hwrm_dir().resolve() / 'Data' / 'ship' / collection_name 
         if not os.path.exists(ship_dir) :
             os.mkdir(ship_dir, mode = 0o777 )
         self.filepath = str( ship_dir / collection_name / ( collection_name + ".dae" ) ) # Set Default Path
