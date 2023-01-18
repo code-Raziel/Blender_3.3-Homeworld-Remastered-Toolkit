@@ -1,5 +1,5 @@
 ## TUTORIAL
-= -$HWRM_BASE=C:\Program Files (x86)\Steam\steamapps\common\Homeworld\HomeworldRM
+#= -$HWRM_BASE=C:\Program Files (x86)\Steam\steamapps\common\Homeworld\HomeworldRM
 #= -$SHIP_NAME=Kad_Swarmer
 #= -$SHIP_NAME=P2Swarmer
 #= -$SHADER_MAP=$[HWRM_BASE]\common\Homeworld\GBXTools\HODOR\SHADERS.MAP
