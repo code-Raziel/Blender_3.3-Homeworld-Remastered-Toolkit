@@ -1,0 +1,15 @@
+## TUTORIAL
+= -$HWRM_BASE=C:\Program Files (x86)\Steam\steamapps\common\Homeworld\HomeworldRM
+#= -$SHIP_NAME=Kad_Swarmer
+#= -$SHIP_NAME=P2Swarmer
+#= -$SHADER_MAP=$[HWRM_BASE]\common\Homeworld\GBXTools\HODOR\SHADERS.MAP
+= -$SHADER_MAP=.\SHADERS.MAP
+= -$SHADE_OPT_LOADDAE=Force8888
+= -$HOD_SAVE_OPTS=ForceScars FilterScars=thruster,bay
+= -$CONVERT_IN=$[HWRM_BASE]\Data\ship\$[SHIP_NAME]\$[SHIP_NAME].dae
+#= -$CONVERT_IN=F:\blender\samples\Kad_Swarmer\cube.dae
+#= -$CONVERT_OUT=F:\blender\GBXTools\HODOR\kus_attackbomber.hod
+= -$CONVERT_OUT=$[HWRM_BASE]\Data\ship\$[SHIP_NAME]\$[SHIP_NAME].hod
+= -do=convert
+= -action=null
+#= -wait
