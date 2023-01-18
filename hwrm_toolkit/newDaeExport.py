@@ -828,10 +828,14 @@ def reindent(filepath,indentation_list):
             file.write(line + '\n')
     del file
 
-def hod_make(filepath,collection):
+def hod_make(filepath,collection,hwrm_dir):
     hodor = str(Path(__file__).resolve().parent / 'HODOR' / 'make_HOD.bat')
+    #hwrm_dir = hwrm_dir.replace(' ','\')
+    print('Homeworld directory:',hwrm_dir)
+    # hodor = str(Path(__file__).resolve().parent / 'HODOR' / 'HODOR.exe')
     #os.popen(f'START CMD /K "{hodor}" {collection.name}')
-    os.popen(f'START CMD /C "{hodor}" {collection.name}')
+    Popen(f'''START CMD /C ""{hodor}" {collection.name} "{hwrm_dir}"" ''',shell=True )
+    
 
 def ExportImages(exp_dir):
 
@@ -873,7 +877,7 @@ class HwDAE:
     collection = ""
     
     #--- Main
-    def doExport(self,filepath):
+    def doExport(self,filepath,hwrm_dir):
         collection = self.collection
         
         #Set up Collada Header Stuff
@@ -943,7 +947,7 @@ class HwDAE:
         reindent(filepath,pretty)
         ExportImages(exp_dir)
         ExportScripts(exp_dir)
-        hod_make(filepath,collection)
+        hod_make(filepath,collection,hwrm_dir)
         
 
     def get_mat_list(self):
@@ -964,10 +968,10 @@ class HwDAE:
         self.collection = bpy.data.collections[0]
         
     
-def save(filepath): 
+def save(filepath,hwrm_dir): 
     bpy.ops.wm.console_toggle()
     thisDAE = HwDAE()
-    thisDAE.doExport(filepath)
+    thisDAE.doExport(filepath,hwrm_dir)
     print('\nProcess Complete. END ')
     bpy.ops.wm.console_toggle()
     return{'FINISHED'}
