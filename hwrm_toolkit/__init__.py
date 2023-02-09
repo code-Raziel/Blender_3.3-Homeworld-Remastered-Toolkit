@@ -117,6 +117,11 @@ class ExportDAE(bpy.types.Operator, ExportHelper):
             default={'EMPTY', 'CAMERA', 'LAMP', 'ARMATURE', 'MESH','CURVE'},
             )
 
+    make_HOD : BoolProperty(
+            name="Create .hod file ( HODOR )",
+            description=" Writes file into hwrm directory (Game Ready)",
+            default=False,
+            )
 
     @property
     def check_extension(self):
@@ -131,6 +136,7 @@ class ExportDAE(bpy.types.Operator, ExportHelper):
         # print (str(Path(__file__).resolve().parent / 'HODOR' / 'models' / " "))
         if not self.filepath:
             raise Exception("filepath not set")
+
         """        global_matrix = Matrix()
 
                 global_matrix[0][0] = \
@@ -145,7 +151,7 @@ class ExportDAE(bpy.types.Operator, ExportHelper):
                                             "xna_validate",
                                             ))
         from . import newDaeExport
-        return newDaeExport.save(self.filepath,str(get_hwrm_dir()))
+        return newDaeExport.save(self.filepath,str(get_hwrm_dir()),self.make_HOD)
 
     def invoke(self, context, event):
         collection_name = bpy.data.collections[0].name # Filename based on collection name
