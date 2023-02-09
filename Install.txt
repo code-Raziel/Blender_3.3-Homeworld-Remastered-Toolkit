@@ -1,6 +1,27 @@
-Set your Scripts folder (Blender: File > User Preferences > File), to the location of this repository on your computer.
+Requirements 
 
-Note: Do NOT set the folder to the "addons" folder within the repo; this will stop the scripts from being found.
+    + Steam version of Homeworld Remastered Collection
+    + Tested on Blender 3.3, Blender 3.4.1 Working              (Not working in Blender 2.93 Test Failed)
 
+Install Plugin
 
-Alternatively, place the HW_Toolkit folder in your Scripts folder.
+    + Git clone the repo or download the release
+    + Copy hwrm-toolkit in Blender add-on folder
+        - ...\Blender Foundation\Blender 3.3\3.3\scripts\addons\hwrm-toolkit
+    + Copy hodor tool files inside  ...\hwrm-toolkit\HODOR folder
+
+Configure Homeworld Remaster to accept mods : 
+
+    + Launch Steam, Go to Homeworld Reamastered Collection and click Manage --> Properties
+        -  In GENERAL TAB go to the bottom and under LAUCH OPTIONS field add :    -overrideBigFile
+
+Quick Start 
+    + Download Sample Template from sample folder :
+        - Open Sample File ( sample01_kus_scout_hwrm1.blend ) and load Add-on : search for "homeworld" to add plugin in Preferences --> Add-On , check the box
+        - File --> Export --> HWRM DAE (.dae) , then check Create .hod file (HODOR) option . (save with default given name ) 
+        - Load Homeworld Remastered and try to build a scout (or just check a saved game if you already have) 
+
+Broken Game 
+    + If your model crashes the game delete it in game folder : 
+        -   ...\Steam\steamapps\common\Homeworld\HomeworldRM\Data\ship and delete es. kus_scout folder 
+            Once folder is deleted game returns to the default original ship model
