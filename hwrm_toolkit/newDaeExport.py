@@ -1,6 +1,7 @@
 # Updated:
 #  Converts all materials to phong on export
 # Dom2 14-JUL-2019
+# 16/02/2023 Updated and added many features
 
 import bpy,sys,os
 import math
