@@ -1,7 +1,6 @@
 # Updated:
 #  Converts all materials to phong on export
 # Dom2 14-JUL-2019
-# 16/02/2023 Updated and added many features
 
 import bpy,sys,os
 import math
@@ -81,7 +80,6 @@ def writeMaterials(dae,libMats,mat_object_list):
     for mat_object in mat_object_list:
         # Get Material Data 
         matName = mat_object.name
-
         thisMaterial = dae.ET.SubElement(libMats,'material',id=matName,name=matName)
         instance = dae.ET.SubElement(thisMaterial,'instance_effect',url='#'+matName+'-fx')
 
@@ -90,13 +88,18 @@ def writeEffects(dae,libEffects,mat_object_list):
     #Get Textures
     textures = []
 
-    def make_map():
-        pass
+    
 
     for mat_object in mat_object_list:
         # Get Material Data 
         matName = mat_object.name ; print('Building Shader for Material:',matName)
-        
+        matShader = ''
+        if '[ship]' in matName : 
+            matShader = 'ship'
+        if '[thruster]' in matName:
+            matShader = 'engine'
+        if '[badge]' in matName:
+            matShader = 'badge'
         node_tree = mat_object.node_tree
         nodes = node_tree.nodes
         bsdf = nodes.get("Principled BSDF")
@@ -150,15 +153,16 @@ def writeEffects(dae,libEffects,mat_object_list):
                         ] 
      
         
-
+        tex_nodes = []
         for map in shader:
             
             # Clear loop data
             img_texture = None
+            tex_nodes = []
             #Map Data
             map_input = map[0]
             map_name = map[1] 
-            map_pri = map[2]
+            map_type = map[2]
             map_sec = map[3]
             
             
@@ -167,47 +171,56 @@ def writeEffects(dae,libEffects,mat_object_list):
                 print('Links:',bsdf.inputs[map_input].links[0])
                 # Get emission node : direct
                 input_node = bsdf.inputs[map_input].links[0].from_node
+                print ('BSDF input node:',input_node.type)
                 #print("267:",emission_node.name); pause()
-                if 'Image Texture' in input_node.name and input_node.image is not None :
-                    img_texture_node = input_node
-                    img_name =  img_texture_node.image.name[:-4]
-                    _ext = img_texture_node.image.name[-4:]
-                    #ship_name = img_texture_node.image.name[0:-4]
-                    img_texture = 'IMG[' + dae.ship_name + '_' + map_pri  + ']'
-                    textures.append([img_name,_ext,map_pri])
-                elif 'NORMAL_MAP' in input_node.type   :
-                    img_texture_node = input_node.inputs[1].links[0].from_node # NORMAL_MAP from input_Color node
-                    img_name =  img_texture_node.image.name[:-4]
-                    _ext = img_texture_node.image.name[-4:]
-                    #ship_name = img_texture_node.image.name[0:-4]
-                    img_texture = 'IMG[' + dae.ship_name  + '_' + map_pri + ']'
-                    textures.append([img_name,_ext,map_pri])
-                else:
-                    print ('Input Node Type: ',input_node.type)
-                    #Get emission node : GLOW and GLOX
-                    # MixRGB001 = input_node
-                    # map_pri_node = MixRGB001.inputs[1].links[0].from_node # Color1 input
-                    # map_sec_node = MixRGB001.inputs[2].links[0].from_node # Color2 input
-                    # for img_texture_node in [img_texture_node_GLOW,img_texture_node_GLOX]:
-                    #     _ext = img_texture_node.image.name[-4:]
-                    #     img_name = img_texture_node.image.name[0:-4]
-                    #     emission_img_texture = 'IMG[' + img_name + ']'
-                    #     textures.append([emission_img_texture,_ext])
+                
+                if input_node.type is not None :
+                    
+                    if 'TEX_IMAGE' in input_node.type:
+                        tex_nodes.append(input_node)
+                    
+                    elif 'MIX' in input_node.type:
 
-                # Write shader map to .dae
-                if img_texture:
-                    shader_map = dae.ET.SubElement(shtype,map_name)    
-                    e_texture = dae.ET.SubElement(shader_map,'texture',texture=img_texture+'-image') # |DEPR| texcoord='CHANNEL0'
-                    e_extra = dae.ET.SubElement(e_texture,'extra')
-                    e_extra_technique = dae.ET.SubElement(e_extra,'technique',profile='MAYA')
-                    wrapU = dae.ET.SubElement(e_extra_technique,'wrapU',sid='wrapU0')
-                    wrapU.text='TRUE'
-                    wrapV = dae.ET.SubElement(e_extra_technique,'wrapV',sid='wrapV0')
-                    wrapV.text='TRUE'
-                    blend = dae.ET.SubElement(e_extra_technique,'blend_mode')
-                    #blend.text is for video sequencer
-                    #https://b3d.interplanety.org/en/adding-video-strip-to-the-vse-sequencer-with-blender-python-api/
-                    blend.text = 'ADD' # set to static add
+                        tex_nodes.append(input_node.inputs[6].links[0].from_node)
+                        tex_nodes.append(input_node.inputs[7].links[0].from_node)
+
+                    elif 'NORMAL_MAP' in input_node.type:
+                        tex_nodes.append( input_node.inputs[1].links[0].from_node ) # NORMAL_MAP from input_Color node
+                        
+                    for tex_node in tex_nodes:
+                        print(tex_node.label)
+                        if tex_node.image:
+                            img_name =  tex_node.image.name[:-4]
+                            _ext = tex_node.image.name[-4:]
+                            map_type = tex_node.label[:4]
+                            
+                            textures.append([img_name,_ext,matShader,map_type])
+
+                            if map_type in ['DIFF','GLOW','SPEC','REFL','NORM'] :
+                                
+                                img_texture = 'IMG[' + dae.ship_name + '_' + matShader + '_' + map_type  + ']'
+                                # Write ETree
+                                shader_map = dae.ET.SubElement(shtype,map_name)    
+                                e_texture = dae.ET.SubElement(shader_map,'texture',texture=img_texture+'-image') # |DEPR| texcoord='CHANNEL0'
+                                e_extra = dae.ET.SubElement(e_texture,'extra')
+                                e_extra_technique = dae.ET.SubElement(e_extra,'technique',profile='MAYA')
+                                wrapU = dae.ET.SubElement(e_extra_technique,'wrapU',sid='wrapU0')
+                                wrapU.text='TRUE'
+                                wrapV = dae.ET.SubElement(e_extra_technique,'wrapV',sid='wrapV0')
+                                wrapV.text='TRUE'
+                                blend = dae.ET.SubElement(e_extra_technique,'blend_mode')
+                                #blend.text is for video sequencer
+                                #https://b3d.interplanety.org/en/adding-video-strip-to-the-vse-sequencer-with-blender-python-api/
+                                blend.text = 'ADD' # set to static add
+                        else: 
+                            print('Empty Image Node')
+                        
+                    
+                    
+                    
+                    
+                    
+                    
             
         #Ambient
         ambient = dae.ET.SubElement(shtype,'ambient')
@@ -215,122 +228,12 @@ def writeEffects(dae,libEffects,mat_object_list):
         W_Color = ' '.join([ str(c) for c in D.worlds['World'].color[0:3]])
         W_Strength = str(D.worlds['World'].node_tree.nodes["Background"].inputs[1].default_value)
         color.text = W_Color + ' ' + W_Strength
-        
-        # # DiffuseNode --> extraction
-        # if len(bsdf.inputs[0].links)>0:
-        #     print(bsdf.inputs[0].name) # base color_socket
-        #     print('Links:',bsdf.inputs[0].links)
-        #     # Get diffuse image-texture-node
-        #     diffuse_node = bsdf.inputs[0].links[0].from_node
-        #     if 'Image Texture' in diffuse_node.name:
-        #         img_texture_node = diffuse_node
-        #         _ext = diffuse_node.image.name[-4:]
-        #         img_name = diffuse_node.image.name[0:-4]
-        #         diff_img_texture = 'IMG[' + img_name + ']'
-        #         textures.append([diff_img_texture,_ext])
-        #         print("-Texture:",img_name,"-Extension",_ext);#pause()
-        #     else:
-        #         MixRGB001 = diffuse_node
-        #         img_texture_node_DIFF = MixRGB001.inputs['Color1'].links[0].from_node
-        #         img_texture_node_DIFX = MixRGB001.inputs['Color2'].links[0].from_node
-
-        #         # Extract DIFF node
-        #         _ext = img_texture_node_DIFF.image.name[-4:]
-        #         img_name = img_texture_node_DIFF.image.name[0:-4]
-        #         diff_img_texture = 'IMG[' + img_name + ']'
-
-                
-                
-        #         for img_texture_node in [img_texture_node_DIFF,img_texture_node_DIFX]:
-        #             _ext = img_texture_node.image.name[-4:]
-        #             img_name = img_texture_node.image.name[0:-4]
-        #             img_texture_name = 'IMG[' + img_name + ']'
-        #             textures.append([ img_texture_name,_ext])
-            
-        #     #Diffuse
-        #     diffuse = dae.ET.SubElement(shtype,'diffuse')
-        #     #texture = dae.ET.SubElement(diffuse,'texture',texture=diff_img_texture+'-image',texcoord='CHANNEL0')
-        #     d_texture = dae.ET.SubElement(diffuse,'texture',texture=diff_img_texture+'-image')
-        #     d_extra = dae.ET.SubElement(d_texture,'extra')
-        #     d_extra_technique = dae.ET.SubElement(d_extra,'technique',profile='MAYA')
-        #     wrapU = dae.ET.SubElement(d_extra_technique,'wrapU',sid='wrapU0')
-        #     wrapU.text='TRUE'
-        #     wrapV = dae.ET.SubElement(d_extra_technique,'wrapV',sid='wrapV0')
-        #     wrapV.text='TRUE'
-        #     blend = dae.ET.SubElement(d_extra_technique,'blend_mode')
-        #     #blend.text = t.blend_type
-        #     blend.text = 'ADD'
-
-
-        # # Specular Node extraction
-        # if len(bsdf.inputs['Roughness'].links)>0:
-        #     print(bsdf.inputs['Roughness'].name) # specular socket
-        #     print('Links:',bsdf.inputs['Roughness'].links)
-        #     # Get diffuse image-texture-node
-        #     bsdf_link_specular = bsdf.inputs['Roughness'].links[0]
-        #     img_texture_node = bsdf_link_specular.from_node
-        #     _ext = img_texture_node.image.name[-4:]
-        #     img_name = img_texture_node.image.name[0:-4]
-        #     spec_img_texture = 'IMG[' + img_name + ']'
-        #     textures.append([spec_img_texture,_ext])
-        #     print ( spec_img_texture ) # Print Image texture name
-        #     #Specular
-        #     #color = "specular_color" #dae.ET.SubElement(specular,'color',sid='specular')
-        #     #color.text = ColorToArrayToString(D.materials[matName].specular_color)
-        #     if spec_img_texture is not None:
-        #         specular = dae.ET.SubElement(shtype,'specular')
-        #         #for t in specular_tex:
-        #         #texture = dae.ET.SubElement(specular,'texture',texture=spec_image_texture+'-image',texcoord='CHANNEL0')
-        #         s_texture = dae.ET.SubElement(specular,'texture',texture=spec_img_texture+'-image')
-        #         s_extra = dae.ET.SubElement(s_texture,'extra')
-        #         s_extra_technique = dae.ET.SubElement(s_extra,'technique',profile='MAYA')
-        #         wrapU = dae.ET.SubElement(s_extra_technique,'wrapU',sid='wrapU0')
-        #         wrapU.text= "TRUE"
-        #         wrapV = dae.ET.SubElement(s_extra_technique,'wrapV',sid='wrapV0')
-        #         wrapV.text = 'TRUE'
-        #         blend = dae.ET.SubElement(s_extra_technique,'blend_mode')
-        #         #blend.text = t.blend_type
-        #         blend.text = 'ADD'
-
-        # # NormalNode --> extraction
-        # if len(bsdf.inputs[22].links)>0:
-        #     print(bsdf.inputs[22].name) # base color_socket
-        #     #print('365| Links:',bsdf.inputs[22].links);pause()
-        #     # Get diffuse image-texture-node
-        #     normalMap_link = bsdf.inputs[22].links[0]
-        #     normalMap_node = normalMap_link.from_node
-        #     img_texture_node = normalMap_node.inputs['Color'].links[0].from_node
-        #     _ext = img_texture_node.image.name[-4:]
-        #     img_name = img_texture_node.image.name[0:-4]
-        #     print("-Texture Name:",img_name,"-Extension",_ext);#pause()
-        #     norm_img_texture = 'IMG[' + img_name + ']'
-        #     textures.append([norm_img_texture,_ext])
-        #     print ( norm_img_texture ) # Print Image texture name
-        #     #Normal
-        #     if norm_img_texture is not None:
-        #         pass
-        #         #color = dae.ET.SubElement(diffuse,'color',sid='diffuse')
-        #         #color.text = ColorToArrayToString(D.materials[matName].diffuse_color)
-        #     if norm_img_texture is not None:
-        #         diffuse = dae.ET.SubElement(shtype,'normal')
-        #         #texture = dae.ET.SubElement(diffuse,'texture',texture=diff_img_texture+'-image',texcoord='CHANNEL0')
-        #         d_texture = dae.ET.SubElement(diffuse,'texture',texture=norm_img_texture+'-image')
-        #         d_extra = dae.ET.SubElement(d_texture,'extra')
-        #         d_extra_technique = dae.ET.SubElement(d_extra,'technique',profile='MAYA')
-        #         wrapU = dae.ET.SubElement(d_extra_technique,'wrapU',sid='wrapU0')
-        #         wrapU.text='TRUE'
-        #         wrapV = dae.ET.SubElement(d_extra_technique,'wrapV',sid='wrapV0')
-        #         wrapV.text='TRUE'
-        #         blend = dae.ET.SubElement(d_extra_technique,'blend_mode')
-        #         #blend.text = t.blend_type
-        #         blend.text = 'ADD'
 
         # Shininess Mapped on the BSDF Roughness
         shininess = dae.ET.SubElement(shtype,'shininess')
         shine = dae.ET.SubElement(shininess,'float',sid='shininess')
         specular_hardness = str(bsdf.inputs[9].default_value)
         shine.text = specular_hardness
-        
         
         # Reflective Node extraction
         Subsurface_Strength = str(bsdf.inputs[9].default_value)
@@ -361,55 +264,6 @@ def writeEffects(dae,libEffects,mat_object_list):
         alpha = bsdf.inputs[21].default_value
         alpha_reversed = ( 1 - alpha )
         float.text = str( alpha_reversed )
-        
-        # #STRP Element
-        
-        # #color = dae.ET.SubElement(emit,'color',sid='emission')   
-        # #color.text = "color.text" #ColorToArrayToString(D.materials[matName].diffuse_color)
-        # print(bsdf.inputs[19].name) # emission_socket
-        # print('Links:',bsdf.inputs[19].links)
-        # # Get Mix001 node
-        # bsdf_link_emission = bsdf.inputs[19].links[0]
-        # mix001_node = bsdf_link_emission.from_node
-        # print (mix001_node.name)
-        # # Get Mix node
-        # mix001_link_Color1 = mix001_node.inputs[1].links[0]
-        # mix_node = mix001_link_Color1.from_node    
-        # print (mix_node.name)
-        # # Get emission image-texture-node
-        # mix_link_Color2 = mix_node.inputs[2].links[0]
-        # img_texture_node = mix_link_Color2.from_node
-        # #print ( [img_texture_node.type ] ) # goes to Mix.001
-        # STRP_img_texture = 'IMG[' + img_texture_node.image.name.rstrip('.TGA')+ ']'
-        # textures.append(STRP_img_texture)
-        # #print ( img_texture_node.image ) # Print Image texture name
-        
-        # # TEAM STRIP mapped on BSDF Subsurfaced with mixer
-        # print (mix001_node.name)
-        # # Get Mix node
-        # mix001_link_Color1 = mix001_node.inputs[1].links[0]
-        # mix_node = mix001_link_Color1.from_node    
-        # print (mix_node.name)
-        # # Get emission image-texture-node
-        # mix_link_Color1 = mix_node.inputs[1].links[0]
-        # img_texture_node = mix_link_Color1.from_node
-        # #print ( [img_texture_node.type ] ) # goes to Mix.001
-        
-        # #TEAM Element 
-        
-        # #color = dae.ET.SubElement(emit,'color',sid='emission')   
-        # #color.text = "color.text" #ColorToArrayToString(D.materials[matName].diffuse_color)
-        # print(bsdf.inputs[19].name) # emission_socket
-        # print('Links:',bsdf.inputs[19].links)
-        # # Get Mix001 node
-        # bsdf_link_emission = bsdf.inputs[19].links[0]
-        # mix001_node = bsdf_link_emission.from_node
-        # print (mix001_node.name)
-        # # Get Mix node
-        # mix001_link_Color2 = mix001_node.inputs[2].links[0]
-        # img_texture_node = mix001_link_Color2.from_node    
-        # TEAM_img_texture = 'IMG[' + img_texture_node.image.name.rstrip('.TGA')+ ']'
-        # textures.append(TEAM_img_texture)
 
     return textures
  
@@ -917,7 +771,7 @@ def ExportImages(exp_dir,ship_name,textures):
                     print('Exporting external Texture Image :',image.name )
                     src = str(bpy.path.abspath(image.filepath))
                     #print("Source file :",src)
-                    dst = str( exp_dir / ( ship_name+'_'+tex[2]+tex[1] ) )
+                    dst = str( exp_dir / ( ship_name+'_'+tex[2]+'_'+tex[3]+tex[1] ) )
                     print("Destination file :",dst)
                     shutil.copyfile(src, dst)
                     #image.save_render(filepath = str( exp_dir / image.name ) )
@@ -1006,7 +860,7 @@ class HwDAE:
         for tex in textures:
             print('texture',tex[0]+tex[1])
             #if hasattr(tex,'image'):
-            writeTextures(self,libImages,('IMG['+self.ship_name+'_'+tex[2]+']'),tex[1])
+            writeTextures(self,libImages,('IMG['+self.ship_name+'_'+tex[2]+'_'+tex[3]+']'),tex[1])
         
         
         
