@@ -773,7 +773,7 @@ def ExportImages(exp_dir,ship_name,textures):
             if image.name[:-4] in tex:
                 if image.packed_file is not None:
                     print('Exporting packed texture image:',image.name)
-                    image.filepath = str( exp_dir / image.name )
+                    image.filepath = str( exp_dir / ( ship_name+'_'+tex[2]+'_'+tex[3]+tex[1] ) )
                     image.save()
                 else : 
                     print('Exporting external Texture Image :',image.name )
