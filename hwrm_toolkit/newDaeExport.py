@@ -2,7 +2,7 @@
 #  Converts all materials to phong on export
 # Dom2 14-JUL-2019
 
-import bpy,sys,os
+import bpy,sys,os,glob
 import math
 import time
 import shutil
@@ -759,7 +759,13 @@ def hod_make(filepath,ship_name,hwrm_dir):
     
 
 def ExportImages(exp_dir,ship_name,textures):
+    # Deleting old .tga texture files
+    pattern = str(exp_dir)+"*.tga"
+    texs = glob.glob(pattern)
+    for tex in texs:
+        os.remove(tex)
 
+    # Saving files to ship directory
     for image in bpy.data.images:
         for tex in textures:
             if image.name[:-4] in tex:
