@@ -760,9 +760,11 @@ def hod_make(filepath,ship_name,hwrm_dir):
 
 def ExportImages(exp_dir,ship_name,textures):
     # Deleting old .tga texture files
-    pattern = str(exp_dir)+"*.tga"
+    pattern = str(exp_dir)+ '\\' + "*.tga"
+    #print('Cleaning Pattern:',pattern)
     texs = glob.glob(pattern)
     for tex in texs:
+        #print('Cleaning file:',tex)
         os.remove(tex)
 
     # Saving files to ship directory
