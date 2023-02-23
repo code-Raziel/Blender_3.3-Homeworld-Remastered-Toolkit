@@ -14,3 +14,5 @@ Joint Tools contributed by Dominic Cassidy (drache9335@gmail.com).
 Forked by Dom2 to merge with the importer and add the background tools.
 
 New Fork for Blender_3.3 and Blender 3.4.1 that works with HODOR with sample file
+
+Ship Export .dae ---> HOD contributed by Sebastiano Paganin (paganinsebastiano@gmail.com) 
